@@ -1,0 +1,64 @@
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local rootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local speedEnabled = false
+local speedMultiplier = 3  -- Adjust speed intensity
+local speedLoop
+
+-- Create GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local SpeedButton = Instance.new("TextButton")
+SpeedButton.Parent = ScreenGui
+SpeedButton.Size = UDim2.new(0, 180, 0, 50) -- Longer button
+SpeedButton.Position = UDim2.new(0.5, -90, 0.8, 0) -- Centered
+SpeedButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+SpeedButton.TextColor3 = Color3.fromRGB(34, 139, 34) -- Forest Green
+SpeedButton.Text = "Speed OFF"
+SpeedButton.TextScaled = true
+SpeedButton.Font = Enum.Font.SourceSansBold -- Bold text
+SpeedButton.BorderSizePixel = 2
+SpeedButton.AutoButtonColor = false
+SpeedButton.Active = true
+SpeedButton.Draggable = true
+
+-- Curved Radius (12)
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = SpeedButton
+
+-- Toggle Speed
+local function toggleSpeed()
+    speedEnabled = not speedEnabled
+    SpeedButton.Text = speedEnabled and "Speed ON" or "Speed OFF"
+
+    if speedEnabled then
+        speedLoop = RunService.Stepped:Connect(function()
+            if character and rootPart and humanoid.MoveDirection.Magnitude > 0 then
+                local movement = humanoid.MoveDirection * speedMultiplier * 25
+                rootPart.Velocity = Vector3.new(movement.X, rootPart.Velocity.Y, movement.Z) -- Keeps jump unaffected
+            end
+        end)
+    else
+        if speedLoop then
+            speedLoop:Disconnect()
+        end
+    end
+end
+
+SpeedButton.MouseButton1Click:Connect(toggleSpeed)
+
+-- Ensure Speed Works After Respawn
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    rootPart = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:WaitForChild("Humanoid")
+end)
